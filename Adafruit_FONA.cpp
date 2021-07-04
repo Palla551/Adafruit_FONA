@@ -2965,3 +2965,78 @@ bool Adafruit_FONA_3G::parseReply(FONAFlashStringPtr toreply, float *f,
 
   return true;
 }
+
+bool Adafruit_FONA_3G::TCPconnect(char* server, uint16_t port)
+{
+    flushInput();
+
+    // Close old connection
+    getReply(F("AT+CIPCLOSE=0"));
+
+    // Get data manually
+    if (!sendCheckReply(F("AT+CIPRXGET=1"), ok_reply)) return false;
+
+    char sendcmd[50];
+    sprintf(sendcmd, "AT+CIPOPEN=0,\"TCP\",\"%s\",%u", server, port);
+
+    return sendCheckReply(sendcmd, F("Connect ok"), 5000);
+}
+
+bool Adafruit_FONA_3G::TCPclose(void)
+{
+    return sendCheckReply(F("AT+CIPCLOSE=0"), ok_reply);
+}
+
+
+boolean Adafruit_FONA_3G::TCPconnected(void) {
+    float index;
+    return sendParseReply(F("AT+CIPOPEN?"), F("+CIPOPEN: "), &index, ',', 4);
+}
+
+
+boolean Adafruit_FONA_3G::TCPsend(char* packet, uint8_t len) {
+    flushInput();
+
+    char sendcmd[20];
+    sprintf(sendcmd, "AT+CIPSEND=0,%u", len);
+    if (!sendCheckReply(sendcmd, F(">"))) return false;
+
+    return sendCheckReply(packet, ok_reply);
+}
+
+uint16_t Adafruit_FONA_3G::TCPavailable(void) {
+    float avail;
+
+    if (!sendParseReply(F("AT+CIPRXGET=4,0"), F("+CIPRXGET: 4,0,"), &avail, ',', 0)) return 0;
+
+
+    DEBUG_PRINT(avail); DEBUG_PRINTLN(F(" bytes available"));
+
+
+    return (uint16_t)avail;
+}
+
+uint16_t Adafruit_FONA_3G::TCPread(uint8_t* buff, uint8_t len) {
+    float avail;
+
+    mySerial->print(F("AT+CIPRXGET=2,0,"));
+    mySerial->println(len);
+    readline();
+
+    if (!parseReply(F("+CIPRXGET: 2,0,"), &avail, ',', 0)) return false;
+
+    readRaw((uint16_t)avail);
+
+#ifdef ADAFRUIT_FONA_DEBUG
+    DEBUG_PRINT(avail); DEBUG_PRINTLN(F(" bytes read"));
+    for (uint8_t i = 0; i < avail; i++) {
+        DEBUG_PRINT(F(" 0x")); DEBUG_PRINT(replybuffer[i], HEX);
+    }
+    DEBUG_PRINTLN();
+#endif
+
+    memcpy(buff, replybuffer, (uint16_t)avail);
+
+    return (uint16_t)avail;
+}
+

@@ -271,6 +271,16 @@ public:
   bool enableGPRS(bool onoff);
   bool enableGPS(bool onoff);
 
+
+  // TCP raw connections
+  bool TCPconnect(char* server, uint16_t port);
+  bool TCPclose(void);
+  bool TCPconnected(void);
+  bool TCPsend(char* data, uint8_t len);
+  uint16_t TCPavailable(void);
+  uint16_t TCPread(uint8_t* buff, uint8_t len);
+
+
 protected:
   bool parseReply(FONAFlashStringPtr toreply, float *f, char divider,
                   uint8_t index);
