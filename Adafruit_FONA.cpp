@@ -3001,7 +3001,20 @@ boolean Adafruit_FONA_3G::TCPsend(char* packet, uint8_t len) {
     sprintf(sendcmd, "AT+CIPSEND=0,%u", len);
     if (!sendCheckReply(sendcmd, F(">"))) return false;
 
-    return sendCheckReply(packet, ok_reply);
+    //DEBUG_PRINT(F("\t---> "));
+    //DEBUG_PRINTLN(send);
+
+    for (int i = 0; i < len; i++) {
+        mySerial->print(packet[i]);
+    }
+    mySerial->println();
+
+    uint8_t l = readline(FONA_DEFAULT_TIMEOUT_MS);
+
+    //DEBUG_PRINT(F("\t<--- "));
+    //DEBUG_PRINTLN(replybuffer);
+
+    return l;
 }
 
 uint16_t Adafruit_FONA_3G::TCPavailable(void) {
